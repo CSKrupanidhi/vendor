@@ -113,59 +113,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Stage 11: Helm Lint') {
-            steps {
-                echo "Starting Stage 11: Helm Lint..."
-                // Verify the newly created Helm charts are valid
-                sh 'helm lint ./helm/vendor-management'
-            }
-        }
-
-        stage('Stage 12: EKS Authentication') {
-            steps {
-                echo "Starting Stage 12: EKS Authentication..."
-                // Uses the EC2 IAM Instance Role (Jenkins-EKS-Admin) - no credentials needed!
-                sh 'aws eks update-kubeconfig --region us-east-1 --name vendor-cluster'
-            }
-        }
-
-        stage('Stage 13: Helm Deploy') {
-            steps {
-                echo "Starting Stage 13: Helm Deploy..."
-                // Uses the EC2 IAM Instance Role directly - no credentials needed!
-                sh '''
-                aws eks update-kubeconfig --region us-east-1 --name vendor-cluster
-                helm upgrade --install vendor-management ./helm/vendor-management \
-                  --set image.repository=govindhan1234 \
-                  --set image.tag=''' + env.BUILD_NUMBER + '''
-                '''
-            }
-        }
-
-        stage('Stage 14: Prometheus Monitoring') {
-            steps {
-                echo "Starting Stage 14: Prometheus Monitoring..."
-                // Install/Update Prometheus using Helm
-                sh '''
-                helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-                helm repo update
-                helm upgrade --install prometheus prometheus-community/prometheus --set server.persistentVolume.enabled=false
-                '''
-            }
-        }
-
-        stage('Stage 15: Grafana Dashboard') {
-            steps {
-                echo "Starting Stage 15: Grafana Dashboard..."
-                // Install/Update Grafana using Helm
-                sh '''
-                helm repo add grafana https://grafana.github.io/helm-charts
-                helm repo update
-                helm upgrade --install grafana grafana/grafana --set persistence.enabled=false
-                '''
-            }
-        }
     }
 }
 

@@ -2,30 +2,45 @@ services:
   db:
     image: mongo:latest
     container_name: vendor-db
-    ports:
-      - "27017:27017"
+    restart: unless-stopped
+    # Exposing 27017 to the public internet is disabled for security.
+    # The backend can still access it internally at db:27017.
+    expose:
+      - "27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - app-network
 
   backend:
     build: ./backend
     container_name: vendor-backend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       - URL=mongodb://db:27017/vendor_db
       - JWT_SECRET=your_jwt_secret_here
+      - PORT=3000
     depends_on:
       - db
+    networks:
+      - app-network
 
   frontend:
     build: ./frontend
     container_name: vendor-frontend
+    restart: unless-stopped
     ports:
       - "80:80"
     depends_on:
       - backend
+    networks:
+      - app-network
 
 volumes:
   mongo-data:
 
+networks:
+  app-network:
+    driver: bridge
